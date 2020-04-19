@@ -143,11 +143,7 @@ class BaseForm(object):
 
     @property
     def errors(self):
-        if self._errors is None:
-            self._errors = dict(
-                (name, f.errors) for name, f in iteritems(self._fields) if f.errors
-            )
-        return self._errors
+        return dict((name, f.errors) for name, f in iteritems(self._fields) if f.errors)
 
 
 class FormMeta(type):
