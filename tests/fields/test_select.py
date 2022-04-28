@@ -3,6 +3,8 @@ from tests.common import DummyPostData
 
 from wtforms import validators
 from wtforms import widgets
+from wtforms.fields import Choice
+from wtforms.fields import Field
 from wtforms.fields import SelectField
 from wtforms.form import Form
 
@@ -19,7 +21,7 @@ def test_select_field_copies_choices():
             super().__init__(*args, **kwargs)
 
         def add_choice(self, choice):
-            self.items.choices.append((choice, choice))
+            self.items.choices.append(Choice(choice, choice))
 
     f1 = F()
     f2 = F()
@@ -27,15 +29,24 @@ def test_select_field_copies_choices():
     f1.add_choice("a")
     f2.add_choice("b")
 
-    assert f1.items.choices == [("a", "a")]
-    assert f2.items.choices == [("b", "b")]
+    assert f1.items.choices == [Choice("a", "a")]
+    assert f2.items.choices == [Choice("b", "b")]
     assert f1.items.choices is not f2.items.choices
 
 
 class F(Form):
-    a = SelectField(choices=[("a", "hello"), ("btest", "bye")], default="a")
+    a = SelectField(
+        choices=[
+            Choice("a", "hello"),
+            Choice("btest", "bye"),
+        ],
+        default="a",
+    )
     b = SelectField(
-        choices=[(1, "Item 1"), (2, "Item 2")],
+        choices=[
+            Choice(1, "Item 1"),
+            Choice(2, "Item 2"),
+        ],
         coerce=int,
         option_widget=widgets.TextInput(),
     )
@@ -77,7 +88,7 @@ def test_value_coercion():
 def test_iterable_options():
     form = F()
     first_option = list(form.a)[0]
-    assert isinstance(first_option, form.a._Option)
+    assert isinstance(first_option, Field)
     assert list(str(x) for x in form.a) == [
         '<option selected value="a">hello</option>',
         '<option value="btest">bye</option>',
@@ -91,7 +102,7 @@ def test_iterable_options():
 
 
 def test_default_coerce():
-    F = make_form(a=SelectField(choices=[("a", "Foo")]))
+    F = make_form(a=SelectField(choices=[Choice("a", "Foo")]))
     form = F(DummyPostData(a=[]))
     assert not form.validate()
     assert form.a.data is None
@@ -100,7 +111,7 @@ def test_default_coerce():
 
 
 def test_validate_choices():
-    F = make_form(a=SelectField(choices=[("a", "Foo")]))
+    F = make_form(a=SelectField(choices=[Choice("a", "Foo")]))
     form = F(DummyPostData(a=["b"]))
     assert not form.validate()
     assert form.a.data == "b"
@@ -125,7 +136,7 @@ def test_validate_choices_when_none():
 
 
 def test_dont_validate_choices():
-    F = make_form(a=SelectField(choices=[("a", "Foo")], validate_choice=False))
+    F = make_form(a=SelectField(choices=[Choice("a", "Foo")], validate_choice=False))
     form = F(DummyPostData(a=["b"]))
     assert form.validate()
     assert form.a.data == "b"
@@ -146,7 +157,7 @@ def test_choice_shortcut_post():
     assert len(form.a.errors) == 0
 
 
-@pytest.mark.parametrize("choices", [[], None, {}])
+@pytest.mark.parametrize("choices", [[], None])
 def test_empty_choice(choices):
     F = make_form(a=SelectField(choices=choices, validate_choice=False))
     form = F(a="bar")
@@ -169,7 +180,7 @@ def test_callable_choices():
 def test_requried_flag():
     F = make_form(
         c=SelectField(
-            choices=[("a", "hello"), ("b", "bye")],
+            choices=[Choice("a", "hello"), Choice("b", "bye")],
             validators=[validators.InputRequired()],
         )
     )
@@ -185,7 +196,7 @@ def test_requried_flag():
 def test_required_validator():
     F = make_form(
         c=SelectField(
-            choices=[("a", "hello"), ("b", "bye")],
+            choices=[Choice("a", "hello"), Choice("b", "bye")],
             validators=[validators.InputRequired()],
         )
     )
@@ -211,7 +222,7 @@ def test_render_kw_preserved():
 
 
 def test_optgroup():
-    F = make_form(a=SelectField(choices={"hello": [("a", "Foo")]}))
+    F = make_form(a=SelectField(choices=[Choice("a", "Foo", optgroup="hello")]))
     form = F(a="a")
 
     assert (
@@ -219,11 +230,15 @@ def test_optgroup():
         '<option selected value="a">Foo</option>'
         "</optgroup>" in form.a()
     )
-    assert list(form.a.iter_choices()) == [("a", "Foo", True)]
+    assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, "hello", True)]
 
 
 def test_optgroup_shortcut():
-    F = make_form(a=SelectField(choices={"hello": ["foo", "bar"]}))
+    F = make_form(
+        a=SelectField(
+            choices=[Choice("foo", optgroup="hello"), Choice("bar", optgroup="hello")]
+        )
+    )
     form = F(a="bar")
 
     assert (
@@ -232,12 +247,79 @@ def test_optgroup_shortcut():
         '<option selected value="bar">bar</option>'
         "</optgroup>" in form.a()
     )
-    assert list(form.a.iter_choices()) == [("foo", "foo", False), ("bar", "bar", True)]
+    assert list(form.a.iter_choices()) == [
+        Choice("foo", None, None, "hello", False),
+        Choice("bar", None, None, "hello", True),
+    ]
 
 
-@pytest.mark.parametrize("choices", [[], ()])
-def test_empty_optgroup(choices):
-    F = make_form(a=SelectField(choices={"hello": choices}))
-    form = F(a="bar")
-    assert '<optgroup label="hello"></optgroup>' in form.a()
-    assert list(form.a.iter_choices()) == []
+def test_option_render_kw():
+    F = make_form(
+        a=SelectField(
+            choices=[Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"})]
+        )
+    )
+    form = F(a="a")
+
+    assert (
+        '<option data-foo="bar" selected title="foobar" value="a">Foo</option>'
+        in form.a()
+    )
+    assert list(form.a.iter_choices()) == [
+        Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, None, True)
+    ]
+
+
+def test_optgroup_option_render_kw():
+    F = make_form(
+        a=SelectField(
+            choices=[
+                Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello")
+            ]
+        )
+    )
+    form = F(a="a")
+
+    assert (
+        '<optgroup label="hello">'
+        '<option data-foo="bar" selected title="foobar" value="a">Foo</option>'
+        "</optgroup>" in form.a()
+    )
+    assert list(form.a.iter_choices()) == [
+        Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello", True)
+    ]
+
+
+def test_tuple_choices_deprecation():
+    F = make_form(a=SelectField(choices=[("a", "Foo")]))
+    with pytest.warns(DeprecationWarning):
+        form = F(a="a")
+
+    assert '<option selected value="a">Foo</option>' in form.a()
+    assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, None, True)]
+
+
+def test_dict_choices_deprecation_with_choice_object():
+    F = make_form(a=SelectField(choices={"hello": [Choice("a", "Foo")]}))
+    with pytest.warns(DeprecationWarning):
+        form = F(a="a")
+
+    assert (
+        '<optgroup label="hello">'
+        '<option selected value="a">Foo</option>'
+        "</optgroup>" in form.a()
+    )
+    assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, "hello", True)]
+
+
+def test_dict_choices_deprecation_with_tuple():
+    F = make_form(a=SelectField(choices={"hello": [("a", "Foo")]}))
+    with pytest.warns(DeprecationWarning):
+        form = F(a="a")
+
+    assert (
+        '<optgroup label="hello">'
+        '<option selected value="a">Foo</option>'
+        "</optgroup>" in form.a()
+    )
+    assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, "hello", True)]

@@ -2,6 +2,7 @@ from contextlib import contextmanager
 
 import pytest
 
+from wtforms.fields.choices import Choice
 from wtforms.validators import StopValidation
 from wtforms.validators import ValidationError
 
@@ -28,7 +29,9 @@ def basic_widget_dummy_field(dummy_field_class):
 
 @pytest.fixture
 def select_dummy_field(dummy_field_class):
-    return dummy_field_class([("foo", "lfoo", True), ("bar", "lbar", False)])
+    return dummy_field_class(
+        [Choice("foo", "lfoo", _selected=True), Choice("bar", "lbar", _selected=False)]
+    )
 
 
 @pytest.fixture
