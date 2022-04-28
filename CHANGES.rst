@@ -18,6 +18,10 @@ Unreleased
 -   Stop support for python 3.7 :pr:`794`
 -   Added shorter format to :class:`~fields.WeekField`
     defaults :pr:`765`
+-   :class:`~fields.SelectField` refactor. Choices tuples and dicts are
+    deprecated in favor of :class:`~fields.Choice` :pr:`739`
+-   ``<option>`` HTML attributes can be passed using
+    :class:`~fields.Choice` :issue:`692` :pr:`739`
 
 Version 3.0.1
 -------------

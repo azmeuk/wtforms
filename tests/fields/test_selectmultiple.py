@@ -2,6 +2,7 @@ import pytest
 from tests.common import DummyPostData
 
 from wtforms import validators
+from wtforms.fields import Choice
 from wtforms.fields import SelectField
 from wtforms.fields import SelectMultipleField
 from wtforms.form import Form
@@ -13,10 +14,13 @@ def make_form(name="F", **fields):
 
 class F(Form):
     a = SelectMultipleField(
-        choices=[("a", "hello"), ("b", "bye"), ("c", "something")], default=("a",)
+        choices=[Choice("a", "hello"), Choice("b", "bye"), Choice("c", "something")],
+        default=("a",),
     )
     b = SelectMultipleField(
-        coerce=int, choices=[(1, "A"), (2, "B"), (3, "C")], default=("1", "3")
+        coerce=int,
+        choices=[Choice(1, "A"), Choice(2, "B"), Choice(3, "C")],
+        default=("1", "3"),
     )
 
 
@@ -27,16 +31,20 @@ def test_defaults():
     # Test for possible regression with null data
     form.a.data = None
     assert form.validate()
-    assert list(form.a.iter_choices()) == [(v, l, False) for v, l in form.a.choices]
+    assert list(form.a.iter_choices()) == [
+        Choice("a", "hello", None, None, False),
+        Choice("b", "bye", None, None, False),
+        Choice("c", "something", None, None, False),
+    ]
 
 
 def test_with_data():
     form = F(DummyPostData(a=["a", "c"]))
     assert form.a.data == ["a", "c"]
     assert list(form.a.iter_choices()) == [
-        ("a", "hello", True),
-        ("b", "bye", False),
-        ("c", "something", True),
+        Choice("a", "hello", None, None, True),
+        Choice("b", "bye", None, None, False),
+        Choice("c", "something", None, None, True),
     ]
     assert form.b.data == []
     form = F(DummyPostData(b=["1", "2"]))
@@ -100,7 +108,9 @@ def test_validate_choices_when_none():
 
 
 def test_dont_validate_choices():
-    F = make_form(a=SelectMultipleField(choices=[("a", "Foo")], validate_choice=False))
+    F = make_form(
+        a=SelectMultipleField(choices=[Choice("a", "Foo")], validate_choice=False)
+    )
     form = F(DummyPostData(a=["b"]))
     assert form.validate()
     assert form.a.data == ["b"]
@@ -110,7 +120,7 @@ def test_dont_validate_choices():
 def test_requried_flag():
     F = make_form(
         c=SelectMultipleField(
-            choices=[("a", "hello"), ("b", "bye")],
+            choices=[Choice("a", "hello"), Choice("b", "bye")],
             validators=[validators.InputRequired()],
         )
     )
@@ -126,7 +136,7 @@ def test_requried_flag():
 def test_required_validator():
     F = make_form(
         c=SelectMultipleField(
-            choices=[("a", "hello"), ("b", "bye")],
+            choices=[Choice("a", "hello"), Choice("b", "bye")],
             validators=[validators.InputRequired()],
         )
     )
@@ -149,3 +159,40 @@ def test_render_kw_preserved():
         '<option value="bar">bar</option>'
         "</select>"
     )
+
+
+def test_option_render_kw():
+    F = make_form(
+        a=SelectMultipleField(
+            choices=[Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"})]
+        )
+    )
+    form = F(a="a")
+
+    assert (
+        '<option data-foo="bar" selected title="foobar" value="a">Foo</option>'
+        in form.a()
+    )
+    assert list(form.a.iter_choices()) == [
+        Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, None, True)
+    ]
+
+
+def test_optgroup_option_render_kw():
+    F = make_form(
+        a=SelectMultipleField(
+            choices=[
+                Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello")
+            ]
+        )
+    )
+    form = F(a="a")
+
+    assert (
+        '<optgroup label="hello">'
+        '<option data-foo="bar" selected title="foobar" value="a">Foo</option>'
+        "</optgroup>" in form.a()
+    )
+    assert list(form.a.iter_choices()) == [
+        Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello", True)
+    ]
