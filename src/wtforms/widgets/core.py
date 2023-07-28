@@ -333,12 +333,7 @@ class Select:
     rendering to make the field useful.
 
     The field must provide an `iter_choices()` method which the widget will
-    call on rendering; this method must yield tuples of
-    `(value, label, selected)`.
-    It also must provide a `has_groups()` method which tells whether choices
-    are divided into groups, and if they do, the field must have an
-    `iter_groups()` method that yields tuples of `(label, choices)`, where
-    `choices` is a iterable of `(value, label, selected)` tuples.
+    call on rendering; this method must yield :class:`SelectChoice`.
     """
 
     validation_attrs = ["required", "disabled"]
@@ -355,28 +350,33 @@ class Select:
             if k in self.validation_attrs and k not in kwargs:
                 kwargs[k] = getattr(flags, k)
         html = ["<select %s>" % html_params(name=field.name, **kwargs)]
-        if field.has_groups():
-            for group, choices in field.iter_groups():
-                html.append("<optgroup %s>" % html_params(label=group))
-                for val, label, selected in choices:
-                    html.append(self.render_option(val, label, selected))
+        choice_groups = self.sort_by_optgroup(field.iter_choices())
+        for optgroup, choices in choice_groups.items():
+            if optgroup:
+                html.append("<optgroup %s>" % html_params(label=optgroup))
+            for choice in choices:
+                html.append(self.render_option(choice))
+            if optgroup:
                 html.append("</optgroup>")
-        else:
-            for val, label, selected in field.iter_choices():
-                html.append(self.render_option(val, label, selected))
         html.append("</select>")
         return Markup("".join(html))
 
     @classmethod
-    def render_option(cls, value, label, selected, **kwargs):
-        if value is True:
-            # Handle the special case of a 'True' value.
-            value = str(value)
-
-        options = dict(kwargs, value=value)
-        if selected:
+    def render_option(cls, choice, **kwargs):
+        # Handle the special case of a 'True' value.
+        value = str(choice.value) if choice.value is True else choice.value
+        options = {"value": value, **(choice.render_kw or {}), **kwargs}
+        if choice._selected:
             options["selected"] = True
-        return Markup(f"<option {html_params(**options)}>{escape(label)}</option>")
+        label = escape(choice.label or choice.value)
+        return Markup(f"<option {html_params(**options)}>{label}</option>")
+
+    @classmethod
+    def sort_by_optgroup(cls, choices):
+        optgroups = {}
+        for choice in choices:
+            optgroups.setdefault(choice.optgroup, []).append(choice)
+        return optgroups
 
 
 class Option:
@@ -388,9 +388,7 @@ class Option:
     """
 
     def __call__(self, field, **kwargs):
-        return Select.render_option(
-            field._value(), field.label.text, field.checked, **kwargs
-        )
+        return Select.render_option(field.choice, **kwargs)
 
 
 class SearchInput(Input):
