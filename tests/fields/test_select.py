@@ -290,20 +290,16 @@ def test_optgroup_option_render_kw():
     ]
 
 
-def test_tuple_choices_deprecation():
+def test_tuple_choices():
     F = make_form(a=SelectField(choices=[("a", "Foo")]))
-    with pytest.warns(DeprecationWarning):
-        form = F(a="a")
-
+    form = F(a="a")
     assert '<option selected value="a">Foo</option>' in form.a()
     assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, None, True)]
 
 
-def test_dict_choices_deprecation_with_choice_object():
+def test_dict_choices_with_choice_object():
     F = make_form(a=SelectField(choices={"hello": [Choice("a", "Foo")]}))
-    with pytest.warns(DeprecationWarning):
-        form = F(a="a")
-
+    form = F(a="a")
     assert (
         '<optgroup label="hello">'
         '<option selected value="a">Foo</option>'
@@ -312,11 +308,9 @@ def test_dict_choices_deprecation_with_choice_object():
     assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, "hello", True)]
 
 
-def test_dict_choices_deprecation_with_tuple():
+def test_dict_choices_with_tuple():
     F = make_form(a=SelectField(choices={"hello": [("a", "Foo")]}))
-    with pytest.warns(DeprecationWarning):
-        form = F(a="a")
-
+    form = F(a="a")
     assert (
         '<optgroup label="hello">'
         '<option selected value="a">Foo</option>'

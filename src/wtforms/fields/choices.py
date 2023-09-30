@@ -1,4 +1,3 @@
-import warnings
 from dataclasses import dataclass
 from typing import Optional
 
@@ -49,12 +48,6 @@ class Choice:
             return Choice(value=input, optgroup=optgroup)
 
         if isinstance(input, tuple):
-            warnings.warn(
-                "Passing SelectField choices as tuples is deprecated and will be "
-                "removed in wtforms 3.3. Please use Choice instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             return Choice(*input, optgroup=optgroup)
 
 
@@ -107,14 +100,6 @@ class SelectFieldBase(Field):
             return None
 
         if isinstance(choices, dict):
-            warnings.warn(
-                "Passing SelectField choices in a dict deprecated and will be removed "
-                "in wtforms 3.3. Please pass a list of Choice objects with a "
-                "custom optgroup attribute instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
             return [
                 Choice.from_input(input, optgroup)
                 for optgroup, inputs in choices.items()
