@@ -7,6 +7,10 @@ Unreleased
 
 - Fix :class:`~validators.Disabled` validation with provided formdata. :pr:`880`
 - End support for Python 3.9, start support for Python 3.14. :pr:`883`
+- :class:`~fields.SelectField` refactor. Choices tuples and dicts are
+  deprecated in favor of :class:`~fields.Choice`. :pr:`739`
+- ``<option>`` HTML attributes can be passed using
+  :class:`~fields.Choice`. :issue:`692` :pr:`739`
 
 Version 3.2.1
 -------------
