@@ -15,7 +15,7 @@ class BaseForm:
     validation, and data and error proxying.
     """
 
-    def __init__(self, fields, prefix="", meta=_default_meta):
+    def __init__(self, fields, prefix="", meta=_default_meta, datalists=()):
         """
         :param fields:
             A dict or sequence of 2-tuples of partially-constructed fields.
@@ -25,6 +25,8 @@ class BaseForm:
         :param meta:
             A meta instance which is used for configuration and customization
             of WTForms behaviors.
+        :param datalists:
+            An iterable of ``(name, DataList)`` pairs declared at class level.
         """
         if prefix and prefix[-1] not in "-_;:/.":
             prefix += "-"
@@ -33,6 +35,11 @@ class BaseForm:
         self._form_error_key = ""
         self._prefix = prefix
         self._fields = OrderedDict()
+        self._datalists = OrderedDict()
+
+        # Bind datalists first so fields can resolve datalist= references.
+        for name, unbound_datalist in datalists:
+            self._datalists[name] = unbound_datalist.bind(self, name, prefix)
 
         if hasattr(fields, "items"):
             fields = fields.items()
@@ -177,6 +184,7 @@ class FormMeta(type):
     def __init__(cls, name, bases, attrs):
         type.__init__(cls, name, bases, attrs)
         cls._unbound_fields = None
+        cls._unbound_datalists = None
         cls._wtforms_meta = None
 
     def __call__(cls, *args, **kwargs):
@@ -199,6 +207,24 @@ class FormMeta(type):
             fields.sort(key=lambda x: (x[1].creation_counter, x[0]))
             cls._unbound_fields = fields
 
+        if cls._unbound_datalists is None:
+            datalists = []
+            for name in dir(cls):
+                if not name.startswith("_"):
+                    attr = getattr(cls, name)
+                    if getattr(attr, "_formdatalist", False):
+                        if callable(attr._raw_choices):
+                            raise TypeError(
+                                f"DataList {name!r} on {cls.__name__} has "
+                                "callable choices; callable DataLists must be "
+                                "passed inline to a field (e.g. "
+                                "StringField(datalist=DataList(choices=lambda "
+                                "v: ...)))."
+                            )
+                        datalists.append((name, attr))
+            datalists.sort(key=lambda x: (x[1].creation_counter, x[0]))
+            cls._unbound_datalists = datalists
+
         # Create a subclass of the 'class Meta' using all the ancestors.
         if cls._wtforms_meta is None:
             bases = []
@@ -216,6 +242,8 @@ class FormMeta(type):
             cls._wtforms_meta = None
         elif not name.startswith("_") and hasattr(value, "_formfield"):
             cls._unbound_fields = None
+        elif not name.startswith("_") and getattr(value, "_formdatalist", False):
+            cls._unbound_datalists = None
         type.__setattr__(cls, name, value)
 
     def __delattr__(cls, name):
@@ -225,6 +253,7 @@ class FormMeta(type):
         """
         if not name.startswith("_"):
             cls._unbound_fields = None
+            cls._unbound_datalists = None
         type.__delattr__(cls, name)
 
 
@@ -278,8 +307,15 @@ class Form(BaseForm, metaclass=FormMeta):
         meta_obj = self._wtforms_meta()
         if meta is not None and isinstance(meta, dict):
             meta_obj.update_values(meta)
-        super().__init__(self._unbound_fields, meta=meta_obj, prefix=prefix)
+        super().__init__(
+            self._unbound_fields,
+            meta=meta_obj,
+            prefix=prefix,
+            datalists=self._unbound_datalists or (),
+        )
 
+        for name, datalist in self._datalists.items():
+            setattr(self, name, datalist)
         for name, field in self._fields.items():
             # Set all the fields to attributes so that they obscure the class
             # attributes with the same names.

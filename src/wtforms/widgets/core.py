@@ -158,9 +158,14 @@ class Input:
 
     By default, the `_value()` method will be called upon the associated field
     to provide the ``value=`` HTML attribute.
+
+    ``supports_datalist`` indicates whether the HTML input type supports
+    the ``list=`` attribute (i.e. pairing with a ``<datalist>``).
+    Subclasses override this for their specific ``input_type``.
     """
 
     html_params = staticmethod(html_params)
+    supports_datalist = False
 
     def __init__(self, input_type=None):
         if input_type is not None:
@@ -171,6 +176,9 @@ class Input:
         kwargs.setdefault("type", self.input_type)
         if "value" not in kwargs:
             kwargs["value"] = field._value()
+        datalist = getattr(field, "_datalist", None)
+        if datalist is not None and "list" not in kwargs:
+            kwargs["list"] = datalist if isinstance(datalist, str) else datalist.id
         flags = getattr(field, "flags", {})
         for k in dir(flags):
             if k in self.validation_attrs and k not in kwargs:
@@ -185,6 +193,7 @@ class TextInput(Input):
     """
 
     input_type = "text"
+    supports_datalist = True
     validation_attrs = [
         "required",
         "disabled",
@@ -404,6 +413,7 @@ class SearchInput(Input):
     """
 
     input_type = "search"
+    supports_datalist = True
     validation_attrs = [
         "required",
         "disabled",
@@ -420,6 +430,7 @@ class TelInput(Input):
     """
 
     input_type = "tel"
+    supports_datalist = True
     validation_attrs = [
         "required",
         "disabled",
@@ -436,6 +447,7 @@ class URLInput(Input):
     """
 
     input_type = "url"
+    supports_datalist = True
     validation_attrs = [
         "required",
         "disabled",
@@ -452,6 +464,7 @@ class EmailInput(Input):
     """
 
     input_type = "email"
+    supports_datalist = True
     validation_attrs = [
         "required",
         "disabled",
@@ -468,6 +481,7 @@ class DateTimeInput(Input):
     """
 
     input_type = "datetime"
+    supports_datalist = True
     validation_attrs = ["required", "disabled", "readonly", "max", "min", "step"]
 
 
@@ -477,6 +491,7 @@ class DateInput(Input):
     """
 
     input_type = "date"
+    supports_datalist = True
     validation_attrs = ["required", "disabled", "readonly", "max", "min", "step"]
 
 
@@ -486,6 +501,7 @@ class MonthInput(Input):
     """
 
     input_type = "month"
+    supports_datalist = True
     validation_attrs = ["required", "disabled", "readonly", "max", "min", "step"]
 
 
@@ -495,6 +511,7 @@ class WeekInput(Input):
     """
 
     input_type = "week"
+    supports_datalist = True
     validation_attrs = ["required", "disabled", "readonly", "max", "min", "step"]
 
 
@@ -504,6 +521,7 @@ class TimeInput(Input):
     """
 
     input_type = "time"
+    supports_datalist = True
     validation_attrs = ["required", "disabled", "readonly", "max", "min", "step"]
 
 
@@ -513,6 +531,7 @@ class DateTimeLocalInput(Input):
     """
 
     input_type = "datetime-local"
+    supports_datalist = True
     validation_attrs = ["required", "disabled", "readonly", "max", "min", "step"]
 
 
@@ -522,6 +541,7 @@ class NumberInput(Input):
     """
 
     input_type = "number"
+    supports_datalist = True
     validation_attrs = ["required", "disabled", "readonly", "max", "min", "step"]
 
     def __init__(self, step=None, min=None, max=None):
@@ -545,6 +565,7 @@ class RangeInput(Input):
     """
 
     input_type = "range"
+    supports_datalist = True
     validation_attrs = ["disabled", "max", "min", "step"]
 
     def __init__(self, step=None):
@@ -562,4 +583,5 @@ class ColorInput(Input):
     """
 
     input_type = "color"
+    supports_datalist = True
     validation_attrs = ["disabled"]

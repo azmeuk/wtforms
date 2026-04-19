@@ -1,6 +1,9 @@
 from wtforms import validators
 from wtforms import widgets
+from wtforms.datalist import DataList
+from wtforms.fields.choices import Choice
 from wtforms.fields.choices import RadioField
+from wtforms.fields.choices import SelectChoice
 from wtforms.fields.choices import SelectField
 from wtforms.fields.choices import SelectFieldBase
 from wtforms.fields.choices import SelectMultipleField
@@ -64,6 +67,9 @@ __all__ = [
     "IntegerRangeField",
     "DecimalRangeField",
     "BooleanField",
+    "Choice",
+    "DataList",
+    "SelectChoice",
     "TextAreaField",
     "PasswordField",
     "FileField",

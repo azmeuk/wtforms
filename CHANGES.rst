@@ -11,6 +11,9 @@ Unreleased
   deprecated in favor of :class:`~fields.Choice`. :pr:`739`
 - ``<option>`` HTML attributes can be passed using
   :class:`~fields.Choice`. :issue:`692` :pr:`739`
+- Add native :class:`DataList` support. Declare a datalist on a form
+  and reference it from compatible input fields through the ``datalist=``
+  parameter; the rendered input carries a ``list="..."`` attribute.
 
 Version 3.2.1
 -------------

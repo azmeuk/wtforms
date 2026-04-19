@@ -392,8 +392,102 @@ Choice Fields
    to fail.
 
 
+Data Lists
+----------
+
+.. currentmodule:: wtforms
+
+.. class:: DataList(choices=None, *, render_kw=None)
+
+    A ``<datalist>`` of suggestions. Unlike :class:`SelectField`, the
+    input stays a free-form text input: the browser displays the
+    suggestions but the user may type any value. Combine with
+    :class:`~wtforms.validators.AnyOf` if you need a closed set.
+
+    ``choices`` is either a list of :class:`Choice` (or plain strings,
+    in which case the string is used as both value and label), or a
+    callable ``(value) -> list`` invoked at render time with the current
+    field value — convenient for server-side filtering.
+
+    **Shared DataList declared on the form**
+
+    Declare a :class:`DataList` as a form member and reference it from
+    one or more fields via the ``datalist=`` parameter, passing either
+    the instance or its attribute name::
+
+        class SignupForm(Form):
+            countries = DataList(choices=[
+                Choice("FR", "France"),
+                Choice("US", "United States"),
+            ])
+            country = StringField("Country", datalist=countries)
+
+    The ``<input>`` carries ``list="countries"`` and ``form.countries()``
+    renders the shared ``<datalist>`` element. It is rendered once and
+    can be referenced by multiple fields.
+
+    Only static (non-callable) ``choices`` may be declared at form
+    level. A callable ``choices`` must be passed inline to a field
+    (anonymous form, see below), because a shared ``<datalist>``
+    is a single HTML element rendered once — its suggestions cannot
+    vary per referencing input. Declaring a form-level
+    :class:`DataList` with callable ``choices`` raises ``TypeError``.
+
+    **Anonymous (inline) DataList owned by a field**
+
+    Pass a :class:`DataList` instance directly as ``datalist=`` without
+    declaring it on the form to get a field-owned datalist with a
+    unique id derived from the field's id::
+
+        class F(Form):
+            country = StringField(datalist=DataList(choices=["FR", "US"]))
+
+        {{ form.country() }}
+        {{ form.country.datalist() }}
+
+    Inside a :class:`FieldList`, each entry auto-binds its own clone of
+    the inline :class:`DataList`, so a callable ``choices`` sees each
+    entry's own value::
+
+        class F(Form):
+            items = FieldList(
+                StringField(datalist=DataList(choices=lambda v: suggest(v))),
+                min_entries=3,
+            )
+
+        {% for entry in form.items %}
+            {{ entry() }}
+            {{ entry.datalist() }}
+        {% endfor %}
+
+    For string references (``datalist="name"``) the ``list=`` attribute
+    is emitted as-is and ``field.datalist()`` returns empty markup —
+    the user is expected to render the element themselves.
+
+    **String references**
+
+    A field may also reference a datalist id directly by string::
+
+        class F(Form):
+            field = StringField(datalist="external")
+
+    The ``list="external"`` attribute is emitted without validation.
+    The HTML ``list=`` attribute references any ``<datalist>`` by id
+    in the same document, so the datalist can be rendered from a
+    static template, a shared layout, or a different WTForms form on
+    the same page.
+
+    **Compatible fields**
+
+    All fields accept a ``datalist=`` parameter except
+    :class:`SelectField`, :class:`TextAreaField`, checkboxes, radios
+    and file inputs.
+
+
 Convenience Fields
 ------------------
+
+.. currentmodule:: wtforms.fields
 
 .. autoclass:: HiddenField(default field arguments)
 

@@ -11,6 +11,28 @@ from wtforms.validators import StopValidation
 from wtforms.validators import ValidationError
 
 
+def _resolve_datalist(form, ref, field):
+    """Resolve a field's ``datalist=`` reference.
+
+    Returns either:
+
+    - a string, emitted as-is for the ``list=`` attribute (the user is
+      responsible for rendering the ``<datalist>`` element);
+    - a bound :class:`~wtforms.DataList` instance, for both form-level
+      declarations and anonymous (inline) instances. Anonymous
+      instances are cloned at each field bind so that every field —
+      notably each entry of a :class:`~wtforms.FieldList` — gets a
+      unique id derived from the field's own id.
+    """
+    if isinstance(ref, str):
+        return ref
+    datalists = getattr(form, "_datalists", None) or {}
+    for name, unbound in getattr(type(form), "_unbound_datalists", None) or ():
+        if unbound is ref:
+            return datalists[name]
+    return ref.bind(form, name="datalist", id=f"{field.id}-datalist")
+
+
 class Field:
     """
     Field base class
@@ -42,6 +64,7 @@ class Field:
         widget=None,
         render_kw=None,
         name=None,
+        datalist=None,
         _form=None,
         _prefix="",
         _translations=None,
@@ -127,6 +150,16 @@ class Field:
         if widget is not None:
             self.widget = widget
 
+        self._datalist = None
+        if datalist is not None:
+            if not getattr(self.widget, "supports_datalist", False):
+                raise TypeError(
+                    f"{type(self).__name__} (widget "
+                    f"{type(self.widget).__name__}) does not support a datalist."
+                )
+            if _form is not None:
+                self._datalist = _resolve_datalist(_form, datalist, self)
+
         for v in itertools.chain(self.validators, [self.widget]):
             flags = getattr(v, "field_flags", {})
 
@@ -162,6 +195,20 @@ class Field:
         even do anything related to HTML.
         """
         return self.meta.render_field(self, kwargs)
+
+    def datalist(self, **kwargs):
+        """Render the ``<datalist>`` owned by this field, if any.
+
+        Returns empty markup when ``datalist=`` was given as a string
+        reference (the user renders the element themselves) or when no
+        ``datalist=`` was set. For anonymous :class:`DataList` instances
+        the field's current ``data`` is passed as the ``value`` argument
+        of the callable choices resolver.
+        """
+        if self._datalist is None or isinstance(self._datalist, str):
+            return Markup("")
+        kwargs.setdefault("value", self.data)
+        return self._datalist(**kwargs)
 
     @classmethod
     def check_validators(cls, validators):
