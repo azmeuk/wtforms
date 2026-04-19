@@ -5,6 +5,7 @@ from wtforms import validators
 from wtforms import widgets
 from wtforms.fields import Choice
 from wtforms.fields import Field
+from wtforms.fields import SelectChoice
 from wtforms.fields import SelectField
 from wtforms.form import Form
 
@@ -228,7 +229,7 @@ def test_render_kw_preserved():
 
 
 def test_optgroup():
-    F = make_form(a=SelectField(choices=[Choice("a", "Foo", optgroup="hello")]))
+    F = make_form(a=SelectField(choices=[SelectChoice("a", "Foo", optgroup="hello")]))
     form = F(a="a")
 
     assert (
@@ -236,13 +237,18 @@ def test_optgroup():
         '<option selected value="a">Foo</option>'
         "</optgroup>" in form.a()
     )
-    assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, "hello", True)]
+    assert list(form.a.iter_choices()) == [
+        SelectChoice("a", "Foo", None, "hello", _selected=True)
+    ]
 
 
 def test_optgroup_shortcut():
     F = make_form(
         a=SelectField(
-            choices=[Choice("foo", optgroup="hello"), Choice("bar", optgroup="hello")]
+            choices=[
+                SelectChoice("foo", optgroup="hello"),
+                SelectChoice("bar", optgroup="hello"),
+            ]
         )
     )
     form = F(a="bar")
@@ -254,8 +260,8 @@ def test_optgroup_shortcut():
         "</optgroup>" in form.a()
     )
     assert list(form.a.iter_choices()) == [
-        Choice("foo", None, None, "hello", False),
-        Choice("bar", None, None, "hello", True),
+        SelectChoice("foo", None, None, "hello", _selected=False),
+        SelectChoice("bar", None, None, "hello", _selected=True),
     ]
 
 
@@ -272,7 +278,9 @@ def test_option_render_kw():
         in form.a()
     )
     assert list(form.a.iter_choices()) == [
-        Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, None, True)
+        SelectChoice(
+            "a", "Foo", {"title": "foobar", "data-foo": "bar"}, None, _selected=True
+        )
     ]
 
 
@@ -280,7 +288,9 @@ def test_optgroup_option_render_kw():
     F = make_form(
         a=SelectField(
             choices=[
-                Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello")
+                SelectChoice(
+                    "a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello"
+                )
             ]
         )
     )
@@ -292,7 +302,9 @@ def test_optgroup_option_render_kw():
         "</optgroup>" in form.a()
     )
     assert list(form.a.iter_choices()) == [
-        Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello", True)
+        SelectChoice(
+            "a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello", _selected=True
+        )
     ]
 
 
@@ -302,7 +314,9 @@ def test_tuple_choices_deprecation():
         form = F(a="a")
 
     assert '<option selected value="a">Foo</option>' in form.a()
-    assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, None, True)]
+    assert list(form.a.iter_choices()) == [
+        SelectChoice("a", "Foo", None, None, _selected=True)
+    ]
 
 
 def test_dict_choices_deprecation_with_choice_object():
@@ -315,7 +329,9 @@ def test_dict_choices_deprecation_with_choice_object():
         '<option selected value="a">Foo</option>'
         "</optgroup>" in form.a()
     )
-    assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, "hello", True)]
+    assert list(form.a.iter_choices()) == [
+        SelectChoice("a", "Foo", None, "hello", _selected=True)
+    ]
 
 
 def test_dict_choices_deprecation_with_tuple():
@@ -328,4 +344,6 @@ def test_dict_choices_deprecation_with_tuple():
         '<option selected value="a">Foo</option>'
         "</optgroup>" in form.a()
     )
-    assert list(form.a.iter_choices()) == [Choice("a", "Foo", None, "hello", True)]
+    assert list(form.a.iter_choices()) == [
+        SelectChoice("a", "Foo", None, "hello", _selected=True)
+    ]

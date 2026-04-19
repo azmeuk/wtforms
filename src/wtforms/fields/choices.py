@@ -1,5 +1,6 @@
 import warnings
 from dataclasses import dataclass
+from dataclasses import field
 
 from wtforms import widgets
 from wtforms.fields.core import Field
@@ -8,6 +9,7 @@ from wtforms.validators import ValidationError
 __all__ = (
     "SelectField",
     "Choice",
+    "SelectChoice",
     "SelectMultipleField",
     "RadioField",
 )
@@ -16,45 +18,62 @@ __all__ = (
 @dataclass
 class Choice:
     """
-    A dataclass that represents available choices for
-    :class:`RadioField`, :class:`SelectField` and :class:`SelectMultipleField`
+    A dataclass that represents an available choice for choice fields.
 
     :param value:
-        The value that will be send in the request.
+        The value that will be sent in the request.
     :param label:
         The label of the option.
     :param render_kw:
         A dict containing HTML attributes that will be rendered
         with the option.
-    :param optgroup:
-        The `<optgroup>` HTML tag in which the option will be
-        rendered.
     """
 
     value: str
     label: str | None = None
     render_kw: dict | None = None
+    _selected: bool = field(default=False, kw_only=True)
+
+
+@dataclass
+class SelectChoice(Choice):
+    """
+    A :class:`Choice` augmented with an ``<optgroup>`` hint for
+    :class:`SelectField`.
+
+    :param optgroup:
+        The ``<optgroup>`` HTML tag in which the option will be rendered.
+    """
+
     optgroup: str | None = None
-    _selected: bool = False
 
     @classmethod
     def from_input(cls, input, optgroup=None):
-        if isinstance(input, Choice):
+        if isinstance(input, SelectChoice):
             if optgroup:
                 input.optgroup = optgroup
             return input
 
+        if isinstance(input, Choice):
+            return cls(
+                value=input.value,
+                label=input.label,
+                render_kw=input.render_kw,
+                optgroup=optgroup,
+                _selected=input._selected,
+            )
+
         if isinstance(input, str):
-            return Choice(value=input, optgroup=optgroup)
+            return cls(value=input, optgroup=optgroup)
 
         if isinstance(input, tuple):
             warnings.warn(
                 "Passing SelectField choices as tuples is deprecated and will be "
-                "removed in wtforms 3.3. Please use Choice instead.",
+                "removed in wtforms 3.4. Please use Choice or SelectChoice instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            return Choice(*input, optgroup=optgroup)
+            return cls(*input, optgroup=optgroup)
 
 
 class SelectFieldBase(Field):
@@ -76,7 +95,7 @@ class SelectFieldBase(Field):
     def iter_choices(self):
         """
         Provides data for choice widget rendering. Must return a sequence or
-        iterable of Choice.
+        iterable of SelectChoice.
         """
         raise NotImplementedError()
 
@@ -108,19 +127,19 @@ class SelectFieldBase(Field):
         if isinstance(choices, dict):
             warnings.warn(
                 "Passing SelectField choices in a dict deprecated and will be removed "
-                "in wtforms 3.3. Please pass a list of Choice objects with a "
+                "in wtforms 3.4. Please pass a list of SelectChoice objects with a "
                 "custom optgroup attribute instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
 
             return [
-                Choice.from_input(input, optgroup)
+                SelectChoice.from_input(input, optgroup)
                 for optgroup, inputs in choices.items()
                 for input in inputs
             ]
 
-        return [Choice.from_input(input) for input in choices]
+        return [SelectChoice.from_input(input) for input in choices]
 
     class _Option(Field):
         def _value(self):

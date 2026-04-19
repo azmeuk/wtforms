@@ -281,6 +281,8 @@ Choice Fields
 
 .. autoclass:: Choice
 
+.. autoclass:: SelectChoice
+
 .. autoclass:: RadioField(default field arguments, choices=None, coerce=str)
 
     .. code-block:: jinja
@@ -316,6 +318,18 @@ Choice Fields
                 Choice('cpp', 'C++'),
                 Choice('py', 'Python'),
                 Choice('text', 'Plain Text'),
+            ])
+
+    **Select fields with ``<optgroup>``**::
+
+        Use :class:`SelectChoice` to assign an option to an ``<optgroup>``.
+
+        class PastebinEntry(Form):
+            language = SelectField('Programming Language', choices=[
+                SelectChoice('cpp', 'C++', optgroup='Compiled'),
+                SelectChoice('rs', 'Rust', optgroup='Compiled'),
+                SelectChoice('py', 'Python', optgroup='Interpreted'),
+                SelectChoice('text', 'Plain Text'),
             ])
 
     **Select fields with dynamic choice values**::
