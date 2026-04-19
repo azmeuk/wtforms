@@ -3,6 +3,7 @@ import pytest
 from tests.common import DummyPostData
 from wtforms import validators
 from wtforms.fields import Choice
+from wtforms.fields import SelectChoice
 from wtforms.fields import SelectField
 from wtforms.fields import SelectMultipleField
 from wtforms.form import Form
@@ -32,9 +33,9 @@ def test_defaults():
     form.a.data = None
     assert form.validate()
     assert list(form.a.iter_choices()) == [
-        Choice("a", "hello", None, None, False),
-        Choice("b", "bye", None, None, False),
-        Choice("c", "something", None, None, False),
+        SelectChoice("a", "hello", None, None, _selected=False),
+        SelectChoice("b", "bye", None, None, _selected=False),
+        SelectChoice("c", "something", None, None, _selected=False),
     ]
 
 
@@ -42,9 +43,9 @@ def test_with_data():
     form = F(DummyPostData(a=["a", "c"]))
     assert form.a.data == ["a", "c"]
     assert list(form.a.iter_choices()) == [
-        Choice("a", "hello", None, None, True),
-        Choice("b", "bye", None, None, False),
-        Choice("c", "something", None, None, True),
+        SelectChoice("a", "hello", None, None, _selected=True),
+        SelectChoice("b", "bye", None, None, _selected=False),
+        SelectChoice("c", "something", None, None, _selected=True),
     ]
     assert form.b.data == []
     form = F(DummyPostData(b=["1", "2"]))
@@ -180,7 +181,9 @@ def test_option_render_kw():
         in form.a()
     )
     assert list(form.a.iter_choices()) == [
-        Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, None, True)
+        SelectChoice(
+            "a", "Foo", {"title": "foobar", "data-foo": "bar"}, None, _selected=True
+        )
     ]
 
 
@@ -188,7 +191,9 @@ def test_optgroup_option_render_kw():
     F = make_form(
         a=SelectMultipleField(
             choices=[
-                Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello")
+                SelectChoice(
+                    "a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello"
+                )
             ]
         )
     )
@@ -200,7 +205,9 @@ def test_optgroup_option_render_kw():
         "</optgroup>" in form.a()
     )
     assert list(form.a.iter_choices()) == [
-        Choice("a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello", True)
+        SelectChoice(
+            "a", "Foo", {"title": "foobar", "data-foo": "bar"}, "hello", _selected=True
+        )
     ]
 
 

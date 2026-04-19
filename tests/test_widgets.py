@@ -1,7 +1,7 @@
 import pytest
 from markupsafe import Markup
 
-from wtforms.fields.choices import Choice
+from wtforms.fields.choices import SelectChoice
 from wtforms.widgets.core import CheckboxInput
 from wtforms.widgets.core import ColorInput
 from wtforms.widgets.core import FileInput
@@ -178,23 +178,25 @@ def test_select(select_dummy_field):
 
 def test_render_option():
     assert (
-        Select.render_option(Choice("bar", "foo", _selected=False))
+        Select.render_option(SelectChoice("bar", "foo", _selected=False))
         == '<option value="bar">foo</option>'
     )
 
     assert (
-        Select.render_option(Choice(True, "foo", _selected=True))
+        Select.render_option(SelectChoice(True, "foo", _selected=True))
         == '<option selected value="True">foo</option>'
     )
 
     assert (
-        Select.render_option(Choice("bar", '<i class="bar"></i>foo', _selected=False))
+        Select.render_option(
+            SelectChoice("bar", '<i class="bar"></i>foo', _selected=False)
+        )
         == '<option value="bar">&lt;i class=&#34;bar&#34;&gt;&lt;/i&gt;foo</option>'
     )
 
     assert (
         Select.render_option(
-            Choice("bar", Markup('<i class="bar"></i>foo'), _selected=False)
+            SelectChoice("bar", Markup('<i class="bar"></i>foo'), _selected=False)
         )
         == '<option value="bar"><i class="bar"></i>foo</option>'
     )
