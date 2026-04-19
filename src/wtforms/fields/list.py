@@ -60,6 +60,7 @@ class FieldList(Field):
         self._prefix = kwargs.get("_prefix", "")
         self._separator = separator
         self._field_separator = unbound_field.kwargs.get("separator", "-")
+        self._enclosing_form = kwargs.get("_form")
 
     def process(self, formdata, data=unset_value, extra_filters=None):
         if extra_filters:
@@ -162,7 +163,7 @@ class FieldList(Field):
         name = f"{self.short_name}{self._separator}{index}"
         id = f"{self.id}{self._separator}{index}"
         field = self.unbound_field.bind(
-            form=None,
+            form=self._enclosing_form,
             name=name,
             prefix=self._prefix,
             id=id,

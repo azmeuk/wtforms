@@ -11,6 +11,14 @@ Unreleased
   deprecated in favor of :class:`~fields.Choice`. :pr:`739`
 - ``<option>`` HTML attributes can be passed using
   :class:`~fields.Choice`. :issue:`692` :pr:`739`
+- Add native :class:`DataList` support. Declare a datalist on a form
+  and reference it from compatible input fields through the ``datalist=``
+  parameter; the rendered input carries a ``list="..."`` attribute.
+  When a field owns an inline ``DataList`` (``StringField(datalist=DataList(...))``),
+  ``field()`` now auto-emits the ``<datalist>`` next to the ``<input>``,
+  so ``{{ field() }}`` alone is a fully functional autocomplete pair.
+  Form-level datalists (declared as class attributes) stay renderable
+  once via ``form.<name>()`` and are not auto-emitted from field calls.
 
 Version 3.2.1
 -------------

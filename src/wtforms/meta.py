@@ -1,3 +1,5 @@
+from markupsafe import Markup
+
 from wtforms import i18n
 from wtforms.utils import WebobInputWrapper
 from wtforms.widgets.core import clean_key
@@ -27,6 +29,27 @@ class DefaultMeta:
         """
         return unbound_field.bind(form=form, **options)
 
+    def bind_datalist(self, form, datalist, options):
+        """
+        bind_datalist allows potential customization of how form-level
+        :class:`~wtforms.DataList` instances are bound to a form,
+        symmetrically to :meth:`bind_field`.
+
+        The default implementation passes the options to
+        :meth:`DataList.bind`. Subclasses may override to copy
+        framework-specific state from the unbound declaration onto the
+        bound clone (e.g. an htmx config dict).
+
+        :param form: The form.
+        :param datalist: The unbound :class:`~wtforms.DataList`.
+        :param options:
+            A dictionary of options which are typically passed to the
+            datalist (``name``, ``prefix``).
+
+        :return: A bound :class:`~wtforms.DataList`.
+        """
+        return datalist.bind(form=form, **options)
+
     def wrap_formdata(self, form, formdata):
         """
         wrap_formdata allows doing custom wrappers of WTForms formdata.
@@ -53,6 +76,20 @@ class DefaultMeta:
         render_field allows customization of how widget rendering is done.
 
         The default implementation calls ``field.widget(field, **render_kw)``
+        and, when the field owns an inline :class:`~wtforms.DataList`
+        (passed directly via ``datalist=DataList(...)``), appends the
+        rendered ``<datalist>`` after the widget output so that
+        ``<input list="X">`` and ``<datalist id="X">`` are always
+        emitted together as a functional pair. Form-level datalists
+        (declared as class attributes and referenced by name or
+        instance) are not auto-emitted — they may be shared by several
+        fields and are rendered once via ``form.<name>()``.
+
+        Meta subclasses that route the rendering to a custom renderer
+        (e.g. a wrapping callable) bypass this behavior by not
+        delegating to ``super().render_field`` — they take full
+        control of the emitted HTML, including whether a
+        ``<datalist>`` is appended.
         """
 
         render_kw = {clean_key(k): v for k, v in render_kw.items()}
@@ -61,7 +98,13 @@ class DefaultMeta:
         if other_kw is not None:
             other_kw = {clean_key(k): v for k, v in other_kw.items()}
             render_kw = dict(other_kw, **render_kw)
-        return field.widget(field, **render_kw)
+        html = field.widget(field, **render_kw)
+        dl = field._datalist
+        if dl is not None and not isinstance(dl, str):
+            form_dls = getattr(dl._form, "_datalists", None) or {}
+            if dl not in form_dls.values():
+                html = Markup(html) + field.datalist()
+        return html
 
     # -- CSRF
 
