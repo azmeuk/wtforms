@@ -19,6 +19,9 @@ Unreleased
   so ``{{ field() }}`` alone is a fully functional autocomplete pair.
   Form-level datalists (declared as class attributes) stay renderable
   once via ``form.<name>()`` and are not auto-emitted from field calls.
+- :meth:`~fields.FieldList._add_entry` now routes through :meth:`~meta.DefaultMeta.bind_field`,
+  consistent with how the form constructor binds top-level fields. Custom ``Meta.bind_field``
+  overrides were silently bypassed for all ``FieldList`` entries.
 
 Version 3.2.1
 -------------
