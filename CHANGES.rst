@@ -1,5 +1,12 @@
 .. currentmodule:: wtforms
 
+Version 3.x.x
+-------------
+
+Unreleased
+
+- Deprecate :class:`~fields.DateTimeField`, which will be removed in WTForms 3.4. :issue:`831`
+
 Version 3.2.2
 -------------
 
