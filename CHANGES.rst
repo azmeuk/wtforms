@@ -1,5 +1,13 @@
 .. currentmodule:: wtforms
 
+Version 3.x.x
+-------------
+
+Unreleased
+
+- Add :class:`~fields.ButtonField` to render ``<button type="submit">``
+  controls with string values. :issue:`784`
+
 Version 3.2.2
 -------------
 

@@ -358,8 +358,6 @@ refer to a single input from the form.
    which are not in the given choices list will cause validation on the field
    to fail.
 
-.. autoclass:: SubmitField(default field arguments)
-
 .. autoclass:: StringField(default field arguments)
 
    .. code-block:: jinja
@@ -372,6 +370,14 @@ refer to a single input from the form.
 
 .. autoclass:: URLField(default field arguments)
 
+Submit fields
+-------------
+
+WTForms provides boolean and string-based submit controls.
+
+.. autoclass:: ButtonField(default field arguments)
+
+.. autoclass:: SubmitField(default field arguments)
 
 Convenience Fields
 ------------------
@@ -436,7 +442,8 @@ complex data structures such as lists and nested objects can be represented.
 .. autoclass:: FieldList(unbound_field, default field arguments, min_entries=0, max_entries=None, separator='-')
 
     **Note**: Due to a limitation in how HTML sends values, FieldList cannot enclose
-    :class:`BooleanField` or :class:`SubmitField` instances.
+    :class:`BooleanField`, :class:`ButtonField`, or :class:`SubmitField`
+    instances.
 
     .. automethod:: append_entry([data])
     .. automethod:: pop_entry
