@@ -1,5 +1,12 @@
 .. currentmodule:: wtforms
 
+Version 3.x.x
+-------------
+
+Unreleased
+
+- Add `test_environment` support to :class:`~validators.Email`. :issue:`869`
+
 Version 3.2.2
 -------------
 
