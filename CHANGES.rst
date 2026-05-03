@@ -1,5 +1,12 @@
 .. currentmodule:: wtforms
 
+Version 3.x.x
+-------------
+
+Unreleased
+
+- Reset :class:`~fields.FieldList` index state when reprocessing entries. :issue:`874`
+
 Version 3.2.2
 -------------
 
