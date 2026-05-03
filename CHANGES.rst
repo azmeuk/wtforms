@@ -1,5 +1,12 @@
 .. currentmodule:: wtforms
 
+Version 3.x.x
+-------------
+
+Unreleased
+
+- Let :class:`~widgets.RangeInput` accept `min` and `max` at construction time. :issue:`693`
+
 Version 3.2.2
 -------------
 
