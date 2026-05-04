@@ -1,5 +1,13 @@
 .. currentmodule:: wtforms
 
+Version 3.x.x
+-------------
+
+Unreleased
+
+- Do not render a ``for`` attribute on the main label of :class:`~fields.RadioField`.
+  :issue:`775`
+
 Version 3.2.2
 -------------
 
